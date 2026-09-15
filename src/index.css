@@ -1,0 +1,255 @@
+/* ============ 🎡 Lucky Spin — 3D 繽紛主題 ============ */
+/* 深色夜市舞台上嘅霓虹糖果色,字體用 Baloo 2 + Noto Sans TC */
+
+:root {
+  --bg1: #14102a;
+  --bg2: #241a45;
+  --ink: #f5f1ff;
+  --card: rgba(255, 255, 255, 0.07);
+  --card-border: rgba(255, 255, 255, 0.16);
+  --accent: #ffd60a;
+  --accent2: #ff595e;
+  --accent3: #8ac926;
+  --accent4: #1982c4;
+  --radius: 20px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Baloo 2', 'Noto Sans TC', system-ui, sans-serif;
+  color: var(--ink);
+  background: radial-gradient(1200px 800px at 20% -10%, #3b2a6b 0%, transparent 60%),
+              radial-gradient(1000px 700px at 90% 10%, #7a2f5f 0%, transparent 55%),
+              radial-gradient(900px 600px at 50% 110%, #1b5e5a 0%, transparent 60%),
+              linear-gradient(160deg, var(--bg1), var(--bg2));
+  min-height: 100vh;
+}
+
+#root { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ---------- 背景 blob 裝飾 ---------- */
+.bg-blobs { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.bg-blobs span {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.35;
+  animation: floaty 14s ease-in-out infinite;
+}
+.bg-blobs span:nth-child(1) { width: 300px; height: 300px; left: -80px; top: 20%; background: #ff595e; }
+.bg-blobs span:nth-child(2) { width: 260px; height: 260px; right: -60px; top: 10%; background: #ffd60a; animation-delay: -4s; }
+.bg-blobs span:nth-child(3) { width: 340px; height: 340px; right: 20%; bottom: -120px; background: #1982c4; animation-delay: -8s; }
+@keyframes floaty {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-40px) scale(1.08); }
+}
+
+/* ---------- hero ---------- */
+.stage { position: relative; z-index: 1; flex: 1; padding: 24px 20px 60px; max-width: 1400px; margin: 0 auto; width: 100%; }
+.hero { text-align: center; margin-bottom: 20px; }
+.hero h1 {
+  font-size: 3.2rem;
+  margin: 0;
+  background: linear-gradient(90deg, #ffd60a, #ff595e 40%, #8ac926 70%, #4cc9f0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.04em;
+  filter: drop-shadow(0 4px 14px rgba(255, 214, 10, 0.35));
+}
+.hero p { margin: 6px 0 0; opacity: 0.85; font-size: 1.05rem; }
+
+/* ---------- layout ---------- */
+.layout {
+  display: grid;
+  grid-template-columns: 340px minmax(420px, 1fr) 300px;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 18px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.card h2 { margin: 4px 0 12px; font-size: 1.15rem; letter-spacing: 0.03em; }
+
+/* ---------- config 面板 ---------- */
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; font-size: 0.92rem; }
+.field span { opacity: 0.85; }
+.field textarea, .field input {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  color: var(--ink);
+  padding: 9px 12px;
+  font: inherit;
+  resize: vertical;
+}
+.field textarea:focus, .field input:focus { outline: 2px solid var(--accent); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.w-row { display: grid; grid-template-columns: 92px 1fr 58px; align-items: center; gap: 8px; margin-bottom: 8px; }
+.w-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
+.w-pct { text-align: right; color: var(--accent); font-variant-numeric: tabular-nums; }
+input[type='range'] { accent-color: var(--accent); width: 100%; }
+
+.hint { opacity: 0.6; font-size: 0.9rem; }
+.ghost-btn {
+  background: transparent;
+  border: 1.5px dashed var(--card-border);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 8px 14px;
+  font: inherit;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.ghost-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- wheel 舞台 ---------- */
+.wheel-card { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 26px; }
+.wheel-wrap { position: relative; width: min(66vh, 440px); aspect-ratio: 1; }
+.wheel-svg {
+  width: 100%;
+  height: 100%;
+  transform: perspective(900px) rotateX(12deg);
+  filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.5));
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.08), 0 0 60px rgba(255, 214, 10, 0.22), inset 0 0 30px rgba(0, 0, 0, 0.35);
+}
+.wheel-rot { transform-origin: 150px 150px; }
+
+/* 指針 (位於 270°/頂部) */
+.pointer {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-top: 30px solid var(--accent);
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+  z-index: 3;
+}
+.pointer::after {
+  content: '';
+  position: absolute;
+  top: -34px;
+  left: -9px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent2);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.4);
+}
+
+.win-glow {
+  position: absolute;
+  inset: -18px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: pulseGlow 1s ease-out 1;
+}
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0.55); }
+  100% { box-shadow: 0 0 0 60px rgba(255, 214, 10, 0); }
+}
+
+/* ---------- 按鈕 ---------- */
+.actions { display: flex; gap: 12px; align-items: center; }
+.spin-btn {
+  font: inherit;
+  font-weight: 800;
+  font-size: 1.15rem;
+  padding: 13px 34px;
+  border: none;
+  border-radius: 999px;
+  color: #4a2c00;
+  background: linear-gradient(135deg, #ffd60a, #ff9f1c 60%, #ff595e);
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(255, 159, 28, 0.45), inset 0 -3px 0 rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+.spin-btn:hover:not(:disabled) { transform: translateY(-2px) scale(1.03); }
+.spin-btn:active:not(:disabled) { transform: scale(0.97); }
+.spin-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ---------- history ---------- */
+.history-card ol { margin: 0; padding-left: 20px; }
+.history-card li { margin-bottom: 6px; font-size: 0.95rem; }
+.empty-hint { opacity: 0.55; font-size: 0.9rem; }
+
+/* ---------- Winner modal ---------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 6, 25, 0.6);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  animation: fadeIn 0.25s ease;
+}
+.modal-card {
+  background: linear-gradient(160deg, #2b1e5e, #4a2a78);
+  border: 2px solid rgba(255, 214, 10, 0.6);
+  border-radius: 26px;
+  padding: 38px 46px;
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-width: 92vw;
+}
+.modal-emote { font-size: 4rem; animation: bounceEm 0.9s ease infinite alternate; }
+@keyframes bounceEm { from { transform: translateY(0) scale(1); } to { transform: translateY(-10px) scale(1.1); } }
+.modal-card h2 { margin: 10px 0 4px; font-size: 1.5rem; }
+.modal-prize {
+  font-size: 2.4rem;
+  font-weight: 900;
+  margin: 8px 0;
+  background: linear-gradient(90deg, #ffd60a, #ff595e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.modal-pct { opacity: 0.75; margin: 0 0 14px; }
+.modal-close {
+  font: inherit;
+  background: transparent;
+  color: var(--ink);
+  border: 1.5px solid var(--card-border);
+  padding: 8px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.modal-close:hover { border-color: var(--accent); }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn { from { opacity: 0; transform: scale(0.75); } to { opacity: 1; transform: scale(1); } }
+
+/* ---------- confetti ---------- */
+.confetti-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 640px) {
+  .hero h1 { font-size: 2.2rem; }
+  .wheel-svg { transform: none; }
+  .modal-card { padding: 26px; }
+}
