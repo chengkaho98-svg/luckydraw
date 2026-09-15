@@ -18,7 +18,7 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
     setSpinning(true)
     spinOne({
       targetIdx: idx,
-      n: segments.length,
+      slices, // 累積 pct 幾何 [a0,a1) — 同畫圖完全一致
       startRot: rot,
       onTick: () => { if (!muted) tick() },
       onDone: () => {
