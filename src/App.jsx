@@ -2,9 +2,8 @@ import { useState, useCallback, useMemo, useRef } from 'react'
 import LuckyWheel from './LuckyWheel.jsx'
 import WinnerModal from './WinnerModal.jsx'
 import Confetti from './Confetti.jsx'
+import SettingsPanel from './SettingsPanel.jsx'
 import './index.css'
-
-const SEG_COLORS = ['#FF595E', '#FFCA3A', '#8AC926', '#1982C4', '#6A4C93', '#FF7B54', '#00C2A8', '#D64D9A']
 
 export default function App() {
   /* ---------- 禮物設定 ---------- */
@@ -35,11 +34,12 @@ export default function App() {
   const [muted, setMuted] = useState(false)
   const [winner, setWinner] = useState(null) // { name, pct }
   const [history, setHistory] = useState([])
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const wheelSpinRef = useRef(null)
 
   const spin = useCallback(() => {
     if (spinning || segments.length === 0) return
-    // 先抽 result，再叫輪盤轉去對應格
+    // 先抽 result，再叫輪盤轉去對應格（輪盤畫面均分，落點按真實機率）
     let r = Math.random() * segments.reduce((s, x) => s + x.weight, 0)
     let idx = 0
     for (let i = 0; i < segments.length; i++) { r -= segments[i].weight; if (r < 0) { idx = i; break } }
@@ -59,73 +59,59 @@ export default function App() {
     }
   }, [segments])
 
-  /* ---------- 畫面 ---------- */
+  /* ---------- 畫面：全屏輪盤為主，設定收埋入齒輪 ---------- */
   return (
-    <div className="stage">
+    <div className="stage fullscreen-mode">
       <div className="bg-blobs" aria-hidden>
         <span /><span /><span />
       </div>
-      <header className="hero">
-        <h1>🎡 Lucky Spin</h1>
-        <p>設定禮物同機率，撳掣一齊迴轉抽大獎！</p>
-      </header>
 
-      <main className="layout">
-        <section className="card config-card">
-          <h2>⚙️ 禮物與人數</h2>
-          <label className="field">
-            <span>🎁 禮物清單</span>
-            <textarea rows={5} value={giftText} onChange={(e) => setGiftText(e.target.value)} />
-          </label>
-          <div className="grid-2">
-            <label className="field">
-              <span>👥 在場人數</span>
-              <input type="number" min={1} value={players} onChange={(e) => setPlayers(Math.max(1, +e.target.value || 1))} />
-            </label>
-            <label className="field">
-              <span>🎁 每人可中上限</span>
-              <input type="number" min={1} max={10} value={shares} onChange={(e) => setShares(Math.min(10, Math.max(1, +e.target.value || 1)))} />
-            </label>
-          </div>
+      <LuckyWheel
+        ref={wheelSpinRef}
+        segments={segments}
+        muted={muted}
+        onLanded={onLanded}
+      />
 
-          <h2>🎚 機率</h2>
-          {segments.length === 0 && <p className="hint">加返啲禮物先～</p>}
-          {segments.map((s) => (
-            <div key={s.name} className="w-row">
-              <span className="w-name">{s.name}</span>
-              <input
-                type="range" min={0} max={10} step={0.5}
-                value={s.weight}
-                onChange={(e) => setWeights((w) => ({ ...w, [s.name]: +e.target.value }))}
-              />
-              <b className="w-pct">{(s.pct * 100).toFixed(1)}%</b>
-            </div>
-          ))}
-          <button className="ghost-btn" onClick={() => setWeights({})}>🎲 一鍵平均</button>
-        </section>
+      <div className="actions floating-actions">
+        <button className="spin-btn" disabled={spinning || segments.length < 2} onClick={spin}>
+          {spinning ? '🌀 轉緊…' : '🎯 開始抽獎'}
+        </button>
+        <button className="ghost-btn sound-btn" onClick={() => setMuted((m) => !m)}>
+          {muted ? '🔇' : '🔊'}
+        </button>
+      </div>
 
-        <section className="card wheel-card">
-          <LuckyWheel
-            ref={wheelSpinRef}
-            segments={segments}
-            muted={muted}
-            onLanded={onLanded}
-          />
-          <div className="actions">
-            <button className="spin-btn" disabled={spinning || segments.length < 2} onClick={spin}>
-              {spinning ? '🌀 轉緊…' : '🎯 開始抽獎'}
-            </button>
-            <button className="ghost-btn" onClick={() => setMuted((m) => !m)}>
-              {muted ? '🔇 靜音' : '🔊 音效'}
-            </button>
-          </div>
-        </section>
-      </main>
+      {/* 右下角齒輪設定 icon */}
+      <button
+        className="gear-btn"
+        onClick={() => setSettingsOpen(true)}
+        title="抽獎設定"
+        aria-label="開啟抽獎設定"
+      >
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden>
+          <path d="M19.14 12.94a7.07 7.07 0 0 0 .05-.94 7.07 7.07 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.61.22L2.65 8.83a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.62-.05.94 0 .32.02.63.05.94L2.77 14.5a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.42.33.61.22l2.39-.96c.49.38 1.03.7 1.62.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54a6.9 6.9 0 0 0 1.62-.94l2.39.96c.24.1.47 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z" />
+        </svg>
+      </button>
+
+      {/* 設定彈窗 */}
+      <SettingsPanel
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        giftText={giftText}
+        setGiftText={setGiftText}
+        players={players}
+        setPlayers={setPlayers}
+        shares={shares}
+        setShares={setShares}
+        segments={segments}
+        setWeights={setWeights}
+        history={history}
+      />
 
       <WinnerModal
         open={!!winner}
         name={winner?.name}
-        pct={winner?.pct != null ? (winner.pct * 100).toFixed(1) : null}
         onClose={() => setWinner(null)}
       />
       {winner && <Confetti seed={winner.at} />}

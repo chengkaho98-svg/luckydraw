@@ -2,23 +2,33 @@
 
 /*
   幾何約定(同 LuckyWheel.jsx 一致):
-  - 扇形用「a-座標」畫:slice i 佔 [a0, a1),a0/a1 由累積 pct * 360 得出
+  - 畫面扇形一律「均分」:slice i 佔 [i*seg, (i+1)*seg),seg = 360/n(隱藏機率大細)
   - a-座標 → 螢幕角度 = a - 90,即 a=0 正正係指針所在嘅頂部
-  - 輪盤用 CSS rotate(rotdeg) 旋轉(順時針為正),想目標扇形中點停喺指針度:
-      (mid - 90) + rot ≡ -90  (mod 360)   =>   rot ≡ -mid + jitter  (mod 360)
+  - 輪盤用 CSS rotate() 旋轉(順時針為正),目標中點要停喺指針度:
+      (mid - 90) + rot ≡ -90  (mod 360)   =>   rot ≡ -mid  (mod 360)
+  - 機率隱藏喺「格內落點 jitter」:中獎結果已由 App 按真實權重抽好,
+    輪盤只係將指針帶去該格;格內停邊個位置加入隨機同權重偏置,
+    令大獎嘅停點傾向格中線,細機率反而偏側 — 視覺更自然又唔穿幫。
 */
 
-export function spinOne({ targetIdx, slices, startRot, onDone, setRot, onTick }) {
+export function spinOne({ targetIdx, slices, weights, startRot, onDone, setRot, onTick }) {
   const T = 4200
   const turns = 5
+  const n = slices.length
+  const seg = 360 / n
 
-  /* 目標扇形嘅真實幾何(累積 pct,唔係等分!) */
   const s = slices[targetIdx]
-  const width = Math.max(0.0001, s.a1 - s.a0)
   const mid = (s.a0 + s.a1) / 2
 
-  /* 隨機喺目標扇形入面揀落點(最多偏移 36% 扇形闊度,指針一定留喺扇形入面) */
-  const jitter = (Math.random() - 0.5) * width * 0.72
+  /* 格內落點:jitter 按真實權重分佈(上限 ±0.36 扇形闊度,指針一定留喺格內) */
+  const weightsArr = Array.isArray(weights) && weights.length === n ? weights : slices.map(() => 1)
+  const totalW = weightsArr.reduce((a, b) => a + b, 0) || 1
+  const wPct = (weightsArr[targetIdx] ?? 1) / totalW
+  const evenPct = 1 / n
+
+  /* 權重高過平均 → 落點集中近中線(bias 細);低過平均 → 偏離中線多啲 */
+  const bias = Math.min(0.9, Math.max(0.25, evenPct / Math.max(wPct, 0.02)))
+  const jitter = (Math.random() - 0.5) * seg * 0.72 * bias
 
   /* 指針喺頂部(a=0):rot ≡ -mid + jitter (mod 360) */
   const landing = (((-mid + jitter) % 360) + 360) % 360
@@ -26,7 +36,6 @@ export function spinOne({ targetIdx, slices, startRot, onDone, setRot, onTick })
   const final = startRot + turns * 360 + (((landing - (startRot % 360)) % 360) + 360) % 360
   const delta = final - startRot
 
-  const seg = 360 / slices.length
   let t0 = null
   let lastTickDeg = 0
   const damping = 3.2 /* easeOutQuart-ish */

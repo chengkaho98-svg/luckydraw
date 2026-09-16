@@ -18,7 +18,8 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
     setSpinning(true)
     spinOne({
       targetIdx: idx,
-      slices, // 累積 pct 幾何 [a0,a1) — 同畫圖完全一致
+      slices,               // 畫面均分幾何（決定一格有幾闊）
+      weights: segments.map((s) => s.weight), // 真實機率（決定抽中邊格）
       startRot: rot,
       onTick: () => { if (!muted) tick() },
       onDone: () => {
@@ -32,21 +33,23 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
   }
 
   /* ---------- SVG 幾何 ---------- */
-  const viewBox = 300
+  const viewBox = 600
   const cx = viewBox / 2
   const cy = viewBox / 2
-  const R = 138
-  const hubR = 34
+  const R = 288
+  const hubR = 64
 
-  /* 切扇形 */
+  /* ---------- 畫面扇形：一律均分（隱藏機率大細），動畫落點先按真實機率 ---------- */
   const slices = useMemo(() => {
-    let acc = 0
-    return segments.map((s, i) => {
-      const a0 = acc * 360
-      acc += s.pct
-      const a1 = acc * 360
-      return { ...s, i, a0, a1 }
-    })
+    const n = Math.max(1, segments.length)
+    const seg = 360 / n
+    return segments.map((s, i) => ({
+      ...s,
+      i,
+      a0: i * seg,
+      a1: (i + 1) * seg,
+      mid: i * seg + seg / 2,
+    }))
   }, [segments])
 
   const arc = (a0, a1, r = R) => {
@@ -63,7 +66,7 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
   /* ---------- 渲染 ---------- */
   return (
     <div className="wheel-wrap">
-      <svg viewBox="0 0 300 300" className="wheel-svg">
+      <svg viewBox={`0 0 ${viewBox} ${viewBox}`} className="wheel-svg">
         <g style={{ transform: `rotate(${rot}deg)` }} className="wheel-rot">
           {slices.map((s) => (
             <path
@@ -71,30 +74,34 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
               d={arc(s.a0, s.a1)}
               fill={PALETTE[s.i % PALETTE.length]}
               stroke="#2b1608"
-              strokeWidth="2"
+              strokeWidth="3"
+              className={winAt === s.i ? 'slice-win' : undefined}
             />
           ))}
           {slices.map((s) => {
-            const mid = (s.a0 + s.a1) / 2
-            const lx = cx + 92 * Math.cos((mid - 90) * Math.PI / 180)
-            const ly = cy + 92 * Math.sin((mid - 90) * Math.PI / 180)
-            const rot = mid + 90
+            const lx = cx + 185 * Math.cos((s.mid - 90) * Math.PI / 180)
+            const ly = cy + 185 * Math.sin((s.mid - 90) * Math.PI / 180)
             return (
               <text
                 key={s.i}
                 x={lx}
                 y={ly}
                 textAnchor="middle"
-                fontSize="14"
-                fontWeight="700"
+                dominantBaseline="middle"
+                fontSize="26"
+                fontWeight="800"
                 fill="#fff"
-                transform={`rotate(${rot}, ${lx}, ${ly})`}
+                stroke="rgba(0,0,0,0.35)"
+                strokeWidth="1"
+                paintOrder="stroke"
+                transform={`rotate(${s.mid + 90}, ${lx}, ${ly})`}
               >{s.name}</text>
             )
           })}
         </g>
-        <circle cx={cx} cy={cy} r={hubR} fill="#3a2415" stroke="#d9a441" strokeWidth="3" />
-        <circle cx={cx} cy={cy} r={hubR - 9} fill="#f6d44d" />
+        <circle cx={cx} cy={cy} r={hubR} fill="#3a2415" stroke="#d9a441" strokeWidth="5" />
+        <circle cx={cx} cy={cy} r={hubR - 16} fill="#f6d44d" />
+        <text x={cx} y={cy + 10} textAnchor="middle" dominantBaseline="middle" fontSize="36">🎡</text>
       </svg>
 
       {/* 指針 */}
