@@ -7,6 +7,7 @@ export default function SettingsPanel({
   players, setPlayers,
   shares, setShares,
   segments, setWeights,
+  setStock,
   history,
 }) {
   /* ESC 關閉 */
@@ -45,6 +46,25 @@ export default function SettingsPanel({
                 <input type="number" min={1} max={10} value={shares} onChange={(e) => setShares(Math.min(10, Math.max(1, +e.target.value || 1)))} />
               </label>
             </div>
+          </section>
+
+          {/* 數量 — 抽少一份少一份,抽晒就自動離開輪盤 */}
+          <section>
+            <h3>📦 禮物數量 <small className="qty-note">(留空 = 無限)</small></h3>
+            {segments.length === 0 && <p className="hint">加返啲禮物先～</p>}
+            {segments.map((s) => (
+              <div key={s.name} className="w-row qty-row">
+                <span className="w-name">{s.name}</span>
+                <input
+                  type="number" min={0} step={1}
+                  placeholder="∞"
+                  value={s.remaining === Infinity ? '' : s.remaining}
+                  onChange={(e) => setStock((st) => ({ ...st, [s.name]: e.target.value === '' ? '' : Math.max(0, Math.floor(+e.target.value || 0)) }))}
+                />
+                <b className="w-pct qty-left">{s.remaining === Infinity ? '∞' : `剩 ${s.remaining}`}</b>
+              </div>
+            ))}
+            <p className="hint">💡 抽中一次扣一份；抽晒嘅獎品會自動離開輪盤，剩低嘅按原本機率重新分配。</p>
           </section>
 
           {/* 機率（對外隱藏，只喺設定入面睇到） */}
