@@ -11,10 +11,10 @@ export default function WinnerModal({ open, name, onClose }) {
   return (
     <div className="modal-backdrop" onClick={() => onClose?.()}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-emote">🎉</div>
-        <h2>恭喜中獎!</h2>
+        <div className="modal-emote">🏆</div>
+        <h2>恭 喜 中 獎</h2>
         <div className="modal-prize">{name}</div>
-        <button className="modal-close" onClick={() => onClose?.()}>收起 ✕</button>
+        <button className="modal-close" onClick={() => onClose?.()}>關閉</button>
       </div>
     </div>
   )

@@ -3,7 +3,7 @@ import { spinOne } from './wheel-engine.js'
 import { tick, fanfare } from './sfx.js'
 import logoUrl from './assets/logo_hp.png'
 
-const PALETTE = ['#FF595E', '#FFCA3A', '#8AC926', '#1982C4', '#1982C4', '#FF7B54', '#00C2A8', '#D64D9A']
+const PALETTE = ['#2F66C9', '#24549F', '#4F8EF7', '#1D3F74', '#3E7BD9', '#6FD1C2', '#F0C75E', '#C9A24B']
 
 export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref) {
   const [rot, setRot] = useState(0)
@@ -72,37 +72,43 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
         <svg viewBox={`0 0 ${viewBox} ${viewBox}`} className="wheel-svg">
           <defs>
             <linearGradient id="goldRim" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f7e08b" />
-              <stop offset="35%" stopColor="#d9a441" />
-              <stop offset="62%" stopColor="#8a5a16" />
-              <stop offset="100%" stopColor="#f2cf6e" />
+              <stop offset="0%" stopColor="#f4e2ae" />
+              <stop offset="35%" stopColor="#c9a24b" />
+              <stop offset="62%" stopColor="#6e5219" />
+              <stop offset="100%" stopColor="#e8cf85" />
             </linearGradient>
             <linearGradient id="goldInner" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#ffe9a8" />
-              <stop offset="50%" stopColor="#d9a441" />
-              <stop offset="100%" stopColor="#b97f22" />
+              <stop offset="0%" stopColor="#f0e0b0" />
+              <stop offset="50%" stopColor="#c9a24b" />
+              <stop offset="100%" stopColor="#8f6d24" />
+            </linearGradient>
+            <linearGradient id="steelRing" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#3d5f94" />
+              <stop offset="50%" stopColor="#1b355c" />
+              <stop offset="100%" stopColor="#0d1f3c" />
             </linearGradient>
             <radialGradient id="hubPlate" cx="0.5" cy="0.35" r="0.85">
               <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="72%" stopColor="#f4f6ff" />
-              <stop offset="100%" stopColor="#d9def3" />
+              <stop offset="72%" stopColor="#f4f8ff" />
+              <stop offset="100%" stopColor="#d4def0" />
             </radialGradient>
             <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
               <feDropShadow dx="0" dy="5" stdDeviation="8" floodColor="#000" floodOpacity="0.4" />
             </filter>
           </defs>
 
-          {/* ---------- 外框:金屬杯托環(參考圖2) ---------- */}
-          <circle cx={cx} cy={cy} r="317" fill="#2b1709" />
-          <circle cx={cx} cy={cy} r="314" fill="url(#goldRim)" />
-          <circle cx={cx} cy={cy} r={rimR} fill="#1d1006" />
+          {/* ---------- 外框:香檳金屬圈 + 深藍杯托 ---------- */}
+          <circle cx={cx} cy={cy} r="317" fill="#0a1930" />
+          <circle cx={cx} cy={cy} r="314" fill="url(#steelRing)" />
+          <circle cx={cx} cy={cy} r="302" fill="none" stroke="#c9a24b" strokeWidth="2.5" opacity="0.85" />
+          <circle cx={cx} cy={cy} r={rimR} fill="#0d1f3c" />
 
-          {/* 杯托內圈嘅小燈泡(像真輪盤) */}
+          {/* 杯托內圈嘅小燈泡 */}
           {Array.from({ length: 24 }, (_, i) => {
             const a = i * 15
             const bx = cx + (rimR + 16) * Math.cos(a * Math.PI / 180)
             const by = cy + (rimR + 16) * Math.sin(a * Math.PI / 180)
-            return <circle key={i} cx={bx} cy={by} r="4.5" fill="#fff7d6" stroke="#c98e2a" strokeWidth="1.2" className="bulb" />
+            return <circle key={i} cx={bx} cy={by} r="4.5" fill="#ffe9ad" stroke="#8f6d24" strokeWidth="1.2" className="bulb" />
           })}
 
           {/* ---------- 旋轉部分 ---------- */}
@@ -112,16 +118,16 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
                 key={s.i}
                 d={arc(s.a0, s.a1)}
                 fill={PALETTE[s.i % PALETTE.length]}
-                stroke="#2b1608"
+                stroke="#0a1930"
                 strokeWidth="3"
                 className={winAt === s.i ? 'slice slice-win' : 'slice'}
               />
             ))}
-            {/* 每格邊界小分隔釘(像真輪盤) */}
+            {/* 每格邊界小分隔釘 */}
             {slices.map((s) => {
               const px = cx + R * Math.cos((s.a0 - 90) * Math.PI / 180)
               const py = cy + R * Math.sin((s.a0 - 90) * Math.PI / 180)
-              return <circle key={`p${s.i}`} cx={px.toFixed(2)} cy={py.toFixed(2)} r="5.5" fill="#f6d44d" stroke="#7a4d10" strokeWidth="2" />
+              return <circle key={`p${s.i}`} cx={px.toFixed(2)} cy={py.toFixed(2)} r="5.5" fill="#e8cf85" stroke="#6e5219" strokeWidth="2" />
             })}
             {slices.map((s) => {
               const lx = cx + 170 * Math.cos((s.mid - 90) * Math.PI / 180)
@@ -134,9 +140,9 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fontSize="27"
-                  fontWeight="800"
-                  fill="#fff"
-                  stroke="rgba(0,0,0,0.4)"
+                  fontWeight="700"
+                  fill="#f4f8ff"
+                  stroke="rgba(6, 16, 34, 0.55)"
                   strokeWidth="1"
                   paintOrder="stroke"
                   transform={`rotate(${s.mid + 90}, ${lx}, ${ly})`}
@@ -147,8 +153,8 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
 
           {/* ---------- 中心 LOGO 座(不旋轉) ---------- */}
           <g filter="url(#softShadow)">
-            <circle cx={cx} cy={cy} r={hubR} fill="url(#goldInner)" stroke="#7a4d10" strokeWidth="2" />
-            <circle cx={cx} cy={cy} r={hubR - 11} fill="url(#hubPlate)" stroke="#eceef8" strokeWidth="1" />
+            <circle cx={cx} cy={cy} r={hubR} fill="url(#goldInner)" stroke="#6e5219" strokeWidth="2" />
+            <circle cx={cx} cy={cy} r={hubR - 11} fill="url(#hubPlate)" stroke="#eef2f9" strokeWidth="1" />
             {/* 公司 LOGO */}
             <image
               href={logoUrl}

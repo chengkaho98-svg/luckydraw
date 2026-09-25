@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-const COLORS = ['#FF595E', '#FFCA3A', '#8AC926', '#1982C4', '#6A4C93', '#00C2A8', '#FF7B54']
+const COLORS = ['#F0C75E', '#F7E8B7', '#4F8EF7', '#2F66C9', '#6FD1C2', '#D7E4FF', '#8FB8F2']
 
 /* 簡易 canvas 彩帶 — winner 出現時灑一次 */
 export default function Confetti({ seed = Date.now(), count = 140 }) {

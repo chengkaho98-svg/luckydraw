@@ -103,7 +103,7 @@ export default function App() {
           disabled={spinning || noStockLeft}
           onClick={spin}
         >
-          {spinning ? '🌀 轉緊…' : noStockLeft ? '😔 禮物抽完晒' : '🎯 開始抽獎'}
+          {spinning ? '旋轉中…' : noStockLeft ? '禮物已全部送出' : '開 始 抽 獎'}
         </button>
         <button className="ghost-btn sound-btn" onClick={() => setMuted((m) => !m)}>
           {muted ? '🔇' : '🔊'}
