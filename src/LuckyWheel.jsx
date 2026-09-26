@@ -3,7 +3,11 @@ import { spinOne } from './wheel-engine.js'
 import { tick, fanfare } from './sfx.js'
 import logoUrl from './assets/logo_hp.png'
 
-const PALETTE = ['#2F66C9', '#24549F', '#4F8EF7', '#1D3F74', '#3E7BD9', '#6FD1C2', '#F0C75E', '#C9A24B']
+/* 藍白相隔扇形(參考實物相片):白格配深藍字,藍格配白字 */
+const BLUE = '#1E5AA8'
+const WHITE = '#F7FAFD'
+const sliceFill = (i) => (i % 2 === 0 ? BLUE : WHITE)
+const sliceTextFill = (i) => (i % 2 === 0 ? '#FFFFFF' : '#123A73')
 
 export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref) {
   const [rot, setRot] = useState(0)
@@ -117,9 +121,9 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
               <path
                 key={s.i}
                 d={arc(s.a0, s.a1)}
-                fill={PALETTE[s.i % PALETTE.length]}
-                stroke="#0a1930"
-                strokeWidth="3"
+                fill={sliceFill(s.i)}
+                stroke="#0A1930"
+                strokeWidth="2.5"
                 className={winAt === s.i ? 'slice slice-win' : 'slice'}
               />
             ))}
@@ -127,7 +131,7 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
             {slices.map((s) => {
               const px = cx + R * Math.cos((s.a0 - 90) * Math.PI / 180)
               const py = cy + R * Math.sin((s.a0 - 90) * Math.PI / 180)
-              return <circle key={`p${s.i}`} cx={px.toFixed(2)} cy={py.toFixed(2)} r="5.5" fill="#e8cf85" stroke="#6e5219" strokeWidth="2" />
+              return <circle key={`p${s.i}`} cx={px.toFixed(2)} cy={py.toFixed(2)} r="5.5" fill="#c9a24b" stroke="#6e5219" strokeWidth="2" />
             })}
             {slices.map((s) => {
               const lx = cx + 170 * Math.cos((s.mid - 90) * Math.PI / 180)
@@ -141,9 +145,9 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
                   dominantBaseline="middle"
                   fontSize="27"
                   fontWeight="700"
-                  fill="#f4f8ff"
-                  stroke="rgba(6, 16, 34, 0.55)"
-                  strokeWidth="1"
+                  fill={sliceTextFill(s.i)}
+                  stroke="rgba(10, 25, 48, 0.18)"
+                  strokeWidth="0.8"
                   paintOrder="stroke"
                   transform={`rotate(${s.mid + 90}, ${lx}, ${ly})`}
                 >{s.name}</text>

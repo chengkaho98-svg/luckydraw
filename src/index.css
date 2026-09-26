@@ -2,16 +2,16 @@
 /* 深海軍藍舞台 + 香檳金點綴,乾淨Pick 專業品牌感,字體用 Noto Sans TC */
 
 :root {
-  --bg1: #0a1428;
-  --bg2: #10203f;
-  --ink: #eaf1ff;
-  --card: rgba(255, 255, 255, 0.06);
-  --card-border: rgba(122, 167, 255, 0.22);
-  --accent: #f0c75e;        /* 香檳金 */
-  --accent2: #4f8ef7;       /* 品牌藍 */
-  --accent3: #6fd1c2;       /* 湖水綠(次要) */
-  --accent4: #4f8ef7;
-  --gold-soft: rgba(240, 199, 94, 0.35);
+  --bg1: #0e2a52;
+  --bg2: #173d75;
+  --bg3: #f4f8fc;
+  --ink: #f4f8fc;
+  --card: rgba(255, 255, 255, 0.07);
+  --card-border: rgba(140, 190, 255, 0.25);
+  --accent: #f0c75e;
+  --accent2: #4f8ef7;
+  --accent3: #6fd1c2;
+  --gold-soft: rgba(240, 199, 94, 0.38);
   --radius: 18px;
 }
 
@@ -23,9 +23,9 @@ html, body {
   font-family: 'Noto Sans TC', system-ui, sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(1400px 900px at 18% -12%, #1d3a6e 0%, transparent 55%),
-    radial-gradient(1100px 750px at 88% 8%, #143059 0%, transparent 52%),
-    radial-gradient(1000px 700px at 50% 115%, #0c2c4e 0%, transparent 60%),
+    radial-gradient(1400px 900px at 18% -12%, #1e4a8f 0%, transparent 55%),
+    radial-gradient(1100px 750px at 88% 8%, #1a3f7a 0%, transparent 52%),
+    radial-gradient(1000px 700px at 50% 115%, #0c2344 0%, transparent 60%),
     linear-gradient(165deg, var(--bg1), var(--bg2));
   min-height: 100vh;
 }
