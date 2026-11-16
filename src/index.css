@@ -139,6 +139,33 @@ input[type='range'] { accent-color: var(--accent2); width: 100%; }
 .wheel-wrap.dragging { cursor: grabbing; }
 .wheel-svg { -webkit-user-drag: none; }
 
+/* 甩得太細力提示 */
+.fling-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 3%;
+  transform: translateX(-50%);
+  background: rgba(10, 25, 48, 0.88);
+  border: 1px solid rgba(240, 199, 94, 0.55);
+  color: #f7e8b7;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 9px 20px;
+  border-radius: 999px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 6;
+  box-shadow: 0 10px 26px rgba(2, 10, 26, 0.5);
+  animation: hintFade 2.2s ease forwards;
+}
+@keyframes hintFade {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  12%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  78%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 .wheel-svg {
   width: 100%;
   height: 100%;

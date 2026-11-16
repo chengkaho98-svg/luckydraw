@@ -3,6 +3,7 @@ import LuckyWheel from './LuckyWheel.jsx'
 import WinnerModal from './WinnerModal.jsx'
 import Confetti from './Confetti.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
+import { drawByWeight } from './wheel-engine.js'
 import './index.css'
 
 export default function App() {
@@ -69,9 +70,7 @@ export default function App() {
   const spin = useCallback(() => {
     if (spinning || segments.length === 0) return
     // 先抽 result,再叫輪盤轉去對應格(輪盤畫面均分,落點按真實機率)
-    let r = Math.random() * segments.reduce((s, x) => s + x.weight, 0)
-    let idx = 0
-    for (let i = 0; i < segments.length; i++) { r -= segments[i].weight; if (r < 0) { idx = i; break } }
+    const idx = drawByWeight(segments.map((s) => s.weight))
     setSpinning(true)
     wheelSpinRef.current?.spinTo(idx)
   }, [spinning, segments])

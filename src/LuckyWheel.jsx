@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useImperativeHandle, forwardRef, useEffect } from 'react'
-import { spinOne, inertialSpin } from './wheel-engine.js'
+import { spinOne, inertialSpin, flingTo, drawByWeight } from './wheel-engine.js'
 import { tick, fanfare } from './sfx.js'
 import logoUrl from './assets/logo_hp.png'
 
@@ -9,18 +9,22 @@ const WHITE = '#F7FAFD'
 const sliceFill = (i) => (i % 2 === 0 ? BLUE : WHITE)
 const sliceTextFill = (i) => (i % 2 === 0 ? '#FFFFFF' : '#123A73')
 
-const FLING_MIN_V = 0.05 /* deg/ms — 慢過呢個就唔使甩尾(上限由 engine clamp) */
+const MIN_FLING_V = 0.15  /* deg/ms — 甩尾速度低於呢個 = 抽獎無效,要再甩啲力 */
+const FLING_MIN_V = 0.05  /* deg/ms — 慢過呢個就完全唔使甩尾 */
+const CLICK_MOVE = 8      /* deg — 拖動唔夠多咁少算 click,唔觸發任何嘢 */
 
 export default forwardRef(function LuckyWheel({ segments, muted, onLanded, onBusyChange }, ref) {
   const [rot, setRot] = useState(0)
   const [spinning, setSpinning] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [flinging, setFlinging] = useState(false)
+  const [hintId, setHintId] = useState(0) // 「細力」提示(key 變 = 動畫重播)
   const [winAt, setWinAt] = useState(null) // winner index (for paint)
 
   const wrapRef = useRef(null)
-  const dragRef = useRef(null)       // { rot, lastAngle, v, lastT, lastTickIdx }
-  const activeAnimRef = useRef(null) // cancel() 由 spinOne / inertialSpin 返回
+  const dragRef = useRef(null)       // { rot, lastAngle, v, lastT, lastTickIdx, totalMove }
+  const activeAnimRef = useRef(null) // cancel() 由 spinOne / inertialSpin / flingTo 返回
+  const hintTimerRef = useRef(null)
   const mutedRef = useRef(muted)
   mutedRef.current = muted
 
@@ -28,6 +32,14 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded, onBus
   useEffect(() => {
     onBusyChange?.(dragging || flinging)
   }, [dragging, flinging, onBusyChange])
+
+  /* 提示顯示 2.2 秒後自動熄 */
+  const showHint = () => {
+    setHintId((k) => k + 1)
+    clearTimeout(hintTimerRef.current)
+    hintTimerRef.current = setTimeout(() => setHintId(0), 2200)
+  }
+  useEffect(() => () => clearTimeout(hintTimerRef.current), [])
 
   const cancelActive = () => {
     if (activeAnimRef.current) {
@@ -63,6 +75,7 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded, onBus
       v: 0,
       lastT: performance.now(),
       lastTickIdx: Math.floor((((rot % 360) + 360) % 360) / (360 / n)),
+      totalMove: 0,
     }
     wrapRef.current.setPointerCapture(e.pointerId)
     setDragging(true)
@@ -77,6 +90,7 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded, onBus
     if (delta < -180) delta += 360
     d.lastAngle = a
     d.rot += delta
+    d.totalMove += Math.abs(delta)
     const now = performance.now()
     const dt = now - d.lastT
     if (dt > 0) {
@@ -98,18 +112,49 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded, onBus
     if (!d) return
     dragRef.current = null
     setDragging(false)
-    /* 甩尾:跟住放開時嘅速度繼續轉,甩得越快轉得越耐 */
-    if (Math.abs(d.v) > FLING_MIN_V) {
-      setFlinging(true)
-      activeAnimRef.current = inertialSpin({
-        startRot: d.rot,
-        velocity: d.v,
-        n: Math.max(1, slices.length),
-        setRot,
-        onTick: () => { if (!mutedRef.current) tick() },
-        onDone: () => { activeAnimRef.current = null; setFlinging(false) },
-      })
+
+    const v = d.v
+    const av = Math.abs(v)
+
+    /* 幾乎冇郁(純 click) → 唔做咩 */
+    if (d.totalMove < CLICK_MOVE) return
+
+    /* 甩得太細力 → 抽獎無效,短促滑低 + 提示再甩啲力 */
+    if (av < MIN_FLING_V) {
+      showHint()
+      if (av > FLING_MIN_V) {
+        setFlinging(true)
+        activeAnimRef.current = inertialSpin({
+          startRot: d.rot,
+          velocity: v,
+          n: Math.max(1, slices.length),
+          setRot,
+          onTick: () => { if (!mutedRef.current) tick() },
+          onDone: () => { activeAnimRef.current = null; setFlinging(false) },
+        })
+      }
+      return
     }
+
+    /* 甩得夠力 → 正式抽獎:先按真實機率抽中獎格,再減速停低喺該格 */
+    const idx = drawByWeight(segments.map((s) => s.weight))
+    setFlinging(true)
+    activeAnimRef.current = flingTo({
+      startRot: d.rot,
+      velocity: v,
+      targetIdx: idx,
+      slices,
+      weights: segments.map((s) => s.weight),
+      setRot,
+      onTick: () => { if (!mutedRef.current) tick() },
+      onDone: () => {
+        activeAnimRef.current = null
+        setFlinging(false)
+        setWinAt(idx)
+        if (!mutedRef.current) fanfare()
+        onLanded?.(idx)
+      },
+    })
   }
 
   /* ---------- 按鈕 spin(按真實機率) ---------- */
@@ -282,6 +327,13 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded, onBus
           <div className="win-glow" key={winAt} />
         )}
       </div>
+
+      {/* 甩得太細力提示 */}
+      {hintId > 0 && (
+        <div className="fling-hint" key={hintId}>
+          💪 甩得太細力，抽獎無效，請再甩啲力！
+        </div>
+      )}
     </div>
   )
 })

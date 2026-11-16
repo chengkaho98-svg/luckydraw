@@ -62,7 +62,7 @@ export function spinOne({ targetIdx, slices, weights, startRot, onDone, setRot, 
   return () => { stopped = true; cancelAnimationFrame(raf) }
 }
 
-/* 慣性甩尾:由指針放開時嘅速度出發,按指數摩擦減速至停 */
+/* 慣性甩尾:由指針放開時嘅速度出發,按指數摩擦減速至停(唔派獎,純物理) */
 export function inertialSpin({ startRot, velocity, n = 6, setRot, onTick, onDone }) {
   const FRICTION = 0.97  /* 每 16.7ms 幀保留嘅速度比例 */
   const STOP_V = 0.02    /* deg/ms,慢過即停 */
@@ -91,6 +91,71 @@ export function inertialSpin({ startRot, velocity, n = 6, setRot, onTick, onDone
     raf = requestAnimationFrame(frame)
   }
   if (Math.abs(v) < STOP_V) { onDone?.(); return () => {} }
+  raf = requestAnimationFrame(frame)
+  return () => { stopped = true; cancelAnimationFrame(raf) }
+}
+
+/* 按真實權重抽一次,返回 index(全零權重 = 平均分) */
+export function drawByWeight(weights) {
+  const total = weights.reduce((a, b) => a + b, 0)
+  if (total <= 0) return Math.floor(Math.random() * weights.length)
+  let r = Math.random() * total
+  for (let i = 0; i < weights.length; i++) {
+    r -= weights[i]
+    if (r < 0) return i
+  }
+  return weights.length - 1
+}
+
+/*
+  甩尾抽獎:中獎結果先按真實權重抽好(flingTo 嘅 targetIdx),
+  輪盤再按甩尾速度決定轉幾多圈,最終精確減速停喺中獎格內(指針 = 中獎格)。
+  甩得越快 → 多轉幾圈 + 轉耐啲。
+*/
+export function flingTo({ startRot, velocity, targetIdx, slices, weights, setRot, onTick, onDone }) {
+  const n = slices.length
+  const seg = 360 / n
+
+  const s = slices[targetIdx]
+  const mid = (s.a0 + s.a1) / 2
+
+  /* 格內落點 jitter:同 spinOne 一致,大獎傾向格中線 */
+  const weightsArr = Array.isArray(weights) && weights.length === n ? weights : slices.map(() => 1)
+  const totalW = weightsArr.reduce((a, b) => a + b, 0) || 1
+  const wPct = (weightsArr[targetIdx] ?? 1) / totalW
+  const evenPct = 1 / n
+  const bias = Math.min(0.9, Math.max(0.25, evenPct / Math.max(wPct, 0.02)))
+  const jitter = (Math.random() - 0.5) * seg * 0.72 * bias
+
+  /* 甩尾速度 → 圈數(2~8 圈)+ 時長(3.2~5.6s) */
+  const v0 = Math.abs(velocity)
+  const turns = Math.max(2, Math.min(8, Math.round(v0 / 0.15)))
+  const T = Math.max(3200, Math.min(5600, 2800 + v0 * 1600))
+
+  /* 指針喺頂部(a=0):rot ≡ -mid + jitter (mod 360) */
+  const landing = (((-mid + jitter) % 360) + 360) % 360
+  const D = turns * 360 + (((landing - (startRot % 360)) % 360) + 360) % 360
+
+  let t0 = null
+  let lastTickDeg = 0
+  let raf = 0
+  let stopped = false
+  const damping = 3.2
+
+  const frame = (ts) => {
+    if (stopped) return
+    if (!t0) t0 = ts
+    const t = Math.min(1, (ts - t0) / T)
+    const ease = 1 - Math.pow(1 - t, damping)
+    const deg = startRot + D * ease
+    setRot(deg)
+    if (onTick && Math.abs(deg - lastTickDeg) > seg / 2) {
+      lastTickDeg = deg
+      onTick()
+    }
+    if (t < 1) raf = requestAnimationFrame(frame)
+    else onDone?.()
+  }
   raf = requestAnimationFrame(frame)
   return () => { stopped = true; cancelAnimationFrame(raf) }
 }

@@ -1,5 +1,5 @@
 /* 引擎物理測試:stub rAF + performance,離線驗證 spinOne / inertialSpin */
-import { spinOne, inertialSpin } from '../src/wheel-engine.js'
+import { spinOne, inertialSpin, flingTo, drawByWeight } from '../src/wheel-engine.js'
 
 let now = 0
 globalThis.performance = { now: () => now }
@@ -77,6 +77,38 @@ if (tiny.moved > 5) throw new Error('微甩應該幾乎唔郁')
   pump(5000)
   if (Math.abs(rot - mid2) > 0.01) throw new Error('inertialSpin cancel 有問題')
   console.log(`inertialSpin cancel: OK`)
+}
+
+/* 5. flingTo:停低時指針一定要喺中獎格內(同 spinOne 同一落點公式) */
+{
+  const n = 6, seg = 360 / n
+  const slices = Array.from({ length: n }, (_, i) => ({ a0: i * seg, a1: (i + 1) * seg, mid: i * seg + seg / 2 }))
+  let ok = true
+  for (let trial = 0; trial < 50; trial++) {
+    const target = Math.floor(Math.random() * n)
+    let rot = 0
+    flingTo({ targetIdx: target, slices, weights: [1,1,1,1,1,1], startRot: 123, velocity: 0.4 + Math.random(), setRot: (d) => { rot = d }, onDone: () => {} })
+    pump(6500)
+    /* 指針下面嘅扇形 index = floor(((360 - rot) % 360) / seg) */
+    const under = Math.floor((((360 - ((rot % 360) + 360) % 360)) % 360) / seg) % n
+    if (under !== target) { ok = false; console.log(`  MISS trial=${trial} target=${target} under=${under} rot=${rot.toFixed(1)}`); break }
+    if (rot < 123 + 2 * 360) { ok = false; console.log(`  flingTo 圈數太少 rot=${rot.toFixed(0)}`); break }
+  }
+  if (!ok) throw new Error('flingTo 有 trial 冇停喺中獎格內')
+  console.log(`flingTo: 50 次試行全部停喺中獎格 ✓`)
+}
+
+/* 6. drawByWeight:權重分佈大致正確 + 全零權重唔會死 */
+{
+  const counts = new Array(6).fill(0)
+  for (let i = 0; i < 6000; i++) counts[drawByWeight([1, 1, 1, 1, 1, 1])]++
+  const even = counts.every((c) => c > 800 && c < 1200)
+  /* 權重 [0,0,10,0,0,0] 應該 100% 抽中 idx 2 */
+  const fixed = new Set()
+  for (let i = 0; i < 200; i++) fixed.add(drawByWeight([0, 0, 10, 0, 0, 0]))
+  const zeroSafe = drawByWeight([0, 0, 0]) >= 0 && drawByWeight([0, 0, 0]) < 3
+  if (!even || fixed.size !== 1 || fixed.has(2) === false || !zeroSafe) throw new Error('drawByWeight 分佈唔啱')
+  console.log(`drawByWeight: 均勻分佈 ✓, 純權重鎖定 ✓, 全零安全 ✓`)
 }
 
 console.log('ALL ENGINE TESTS PASSED ✓')
