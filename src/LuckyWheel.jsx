@@ -1,5 +1,5 @@
-import { useState, useRef, useMemo, useImperativeHandle, forwardRef } from 'react'
-import { spinOne } from './wheel-engine.js'
+import { useState, useRef, useMemo, useImperativeHandle, forwardRef, useEffect } from 'react'
+import { spinOne, inertialSpin } from './wheel-engine.js'
 import { tick, fanfare } from './sfx.js'
 import logoUrl from './assets/logo_hp.png'
 
@@ -9,33 +9,133 @@ const WHITE = '#F7FAFD'
 const sliceFill = (i) => (i % 2 === 0 ? BLUE : WHITE)
 const sliceTextFill = (i) => (i % 2 === 0 ? '#FFFFFF' : '#123A73')
 
-export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref) {
+const FLING_MIN_V = 0.05 /* deg/ms — 慢過呢個就唔使甩尾(上限由 engine clamp) */
+
+export default forwardRef(function LuckyWheel({ segments, muted, onLanded, onBusyChange }, ref) {
   const [rot, setRot] = useState(0)
   const [spinning, setSpinning] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const [flinging, setFlinging] = useState(false)
   const [winAt, setWinAt] = useState(null) // winner index (for paint)
 
-  useImperativeHandle(ref, () => ({ spinTo: (i) => spinTo(i) }))
+  const wrapRef = useRef(null)
+  const dragRef = useRef(null)       // { rot, lastAngle, v, lastT, lastTickIdx }
+  const activeAnimRef = useRef(null) // cancel() 由 spinOne / inertialSpin 返回
+  const mutedRef = useRef(muted)
+  mutedRef.current = muted
 
-  /* ---------- spin ---------- */
+  /* 上報 busy 狀態(拖轉 / 甩尾中)畀 App 用嚟 disable 按鈕 */
+  useEffect(() => {
+    onBusyChange?.(dragging || flinging)
+  }, [dragging, flinging, onBusyChange])
+
+  const cancelActive = () => {
+    if (activeAnimRef.current) {
+      activeAnimRef.current()
+      activeAnimRef.current = null
+    }
+  }
+
+  /* ---------- 指針拖轉 ---------- */
+  const pointerAngle = (e) => {
+    const r = wrapRef.current.getBoundingClientRect()
+    return Math.atan2(
+      e.clientY - (r.top + r.height / 2),
+      e.clientX - (r.left + r.width / 2),
+    ) * 180 / Math.PI
+  }
+
+  const onPointerDown = (e) => {
+    if (e.button != null && e.button !== 0) return
+    const r = wrapRef.current.getBoundingClientRect()
+    // 中心 LOGO 座係固定嘅,唔跟手轉
+    const dx = e.clientX - (r.left + r.width / 2)
+    const dy = e.clientY - (r.top + r.height / 2)
+    const dist = Math.hypot(dx, dy)
+    if (dist < (hubR / viewBox) * r.width) return
+    e.preventDefault()
+    cancelActive()          // 抝住 = 立即停低任何動畫
+    setSpinning(false)
+    const n = Math.max(1, slices.length)
+    dragRef.current = {
+      rot,
+      lastAngle: pointerAngle(e),
+      v: 0,
+      lastT: performance.now(),
+      lastTickIdx: Math.floor((((rot % 360) + 360) % 360) / (360 / n)),
+    }
+    wrapRef.current.setPointerCapture(e.pointerId)
+    setDragging(true)
+  }
+
+  const onPointerMove = (e) => {
+    const d = dragRef.current
+    if (!d) return
+    const a = pointerAngle(e)
+    let delta = a - d.lastAngle
+    if (delta > 180) delta -= 360
+    if (delta < -180) delta += 360
+    d.lastAngle = a
+    d.rot += delta
+    const now = performance.now()
+    const dt = now - d.lastT
+    if (dt > 0) {
+      /* 指數平滑,避免手抖令速度跳動 */
+      d.v = 0.75 * d.v + 0.25 * (delta / dt)
+    }
+    d.lastT = now
+    setRot(d.rot)
+    const n = Math.max(1, slices.length)
+    const idx = Math.floor((((d.rot % 360) + 360) % 360) / (360 / n))
+    if (idx !== d.lastTickIdx) {
+      d.lastTickIdx = idx
+      if (!mutedRef.current) tick()
+    }
+  }
+
+  const endDrag = () => {
+    const d = dragRef.current
+    if (!d) return
+    dragRef.current = null
+    setDragging(false)
+    /* 甩尾:跟住放開時嘅速度繼續轉,甩得越快轉得越耐 */
+    if (Math.abs(d.v) > FLING_MIN_V) {
+      setFlinging(true)
+      activeAnimRef.current = inertialSpin({
+        startRot: d.rot,
+        velocity: d.v,
+        n: Math.max(1, slices.length),
+        setRot,
+        onTick: () => { if (!mutedRef.current) tick() },
+        onDone: () => { activeAnimRef.current = null; setFlinging(false) },
+      })
+    }
+  }
+
+  /* ---------- 按鈕 spin(按真實機率) ---------- */
   const spinTo = (idx) => {
     if (spinning) return
+    cancelActive()
     setWinAt(null)
     setSpinning(true)
-    spinOne({
+    activeAnimRef.current = spinOne({
       targetIdx: idx,
       slices,               // 畫面均分幾何（決定一格有幾闊）
       weights: segments.map((s) => s.weight), // 真實機率（決定抽中邊格）
       startRot: rot,
-      onTick: () => { if (!muted) tick() },
+      onTick: () => { if (!mutedRef.current) tick() },
       onDone: () => {
+        activeAnimRef.current = null
         setSpinning(false)
         setWinAt(idx)
-        if (!muted) fanfare()
+        if (!mutedRef.current) fanfare()
         onLanded?.(idx)
       },
       setRot,
     })
   }
+
+  useImperativeHandle(ref, () => ({ spinTo: (i) => spinTo(i) }))
 
   /* ---------- SVG 幾何 ---------- */
   const viewBox = 640                    // 加闊少少容納厚框
@@ -72,7 +172,14 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
   /* ---------- 渲染 ---------- */
   return (
     <div className="wheel-outer">
-      <div className="wheel-wrap">
+      <div
+        ref={wrapRef}
+        className={dragging ? 'wheel-wrap dragging' : 'wheel-wrap'}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
         <svg viewBox={`0 0 ${viewBox} ${viewBox}`} className="wheel-svg">
           <defs>
             <linearGradient id="goldRim" x1="0" y1="0" x2="0" y2="1">

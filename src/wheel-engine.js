@@ -38,9 +38,12 @@ export function spinOne({ targetIdx, slices, weights, startRot, onDone, setRot, 
 
   let t0 = null
   let lastTickDeg = 0
+  let raf = 0
+  let stopped = false
   const damping = 3.2 /* easeOutQuart-ish */
 
   const frame = (ts) => {
+    if (stopped) return
     if (!t0) t0 = ts
     const t = Math.min(1, (ts - t0) / T)
     const ease = 1 - Math.pow(1 - t, damping)
@@ -52,8 +55,42 @@ export function spinOne({ targetIdx, slices, weights, startRot, onDone, setRot, 
       onTick()
     }
 
-    if (t < 1) requestAnimationFrame(frame)
+    if (t < 1) raf = requestAnimationFrame(frame)
     else onDone?.()
   }
-  requestAnimationFrame(frame)
+  raf = requestAnimationFrame(frame)
+  return () => { stopped = true; cancelAnimationFrame(raf) }
+}
+
+/* 慣性甩尾:由指針放開時嘅速度出發,按指數摩擦減速至停 */
+export function inertialSpin({ startRot, velocity, n = 6, setRot, onTick, onDone }) {
+  const FRICTION = 0.97  /* 每 16.7ms 幀保留嘅速度比例 */
+  const STOP_V = 0.02    /* deg/ms,慢過即停 */
+  const MAX_V = 8        /* deg/ms 上限,防手抖出離譜速度 */
+  let v = Math.max(-MAX_V, Math.min(MAX_V, velocity))
+  let rot = startRot
+  let raf = 0
+  let stopped = false
+  let last = performance.now()
+  const seg = 360 / n
+  let lastTickIdx = Math.floor((((startRot % 360) + 360) % 360) / seg)
+
+  const frame = (ts) => {
+    if (stopped) return
+    const dt = Math.min(50, ts - last)
+    last = ts
+    v *= Math.pow(FRICTION, dt / 16.67)
+    rot += v * dt
+    setRot(rot)
+    const idx = Math.floor((((rot % 360) + 360) % 360) / seg)
+    if (onTick && idx !== lastTickIdx) {
+      lastTickIdx = idx
+      onTick()
+    }
+    if (Math.abs(v) < STOP_V) { stopped = true; onDone?.(); return }
+    raf = requestAnimationFrame(frame)
+  }
+  if (Math.abs(v) < STOP_V) { onDone?.(); return () => {} }
+  raf = requestAnimationFrame(frame)
+  return () => { stopped = true; cancelAnimationFrame(raf) }
 }

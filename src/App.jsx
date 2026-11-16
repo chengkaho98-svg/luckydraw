@@ -96,6 +96,14 @@ export default function App() {
 
   const noStockLeft = segments.length === 0
 
+  /* ---------- 輪盤手勢(拖轉 / 甩尾)busy 狀態 ---------- */
+  const [wheelBusy, setWheelBusy] = useState(false)
+  const handleWheelBusy = useCallback((busy) => {
+    setWheelBusy(busy)
+    // 用家拖住輪盤 = 打斷進行中嘅抽獎 spin
+    if (busy) setSpinning(false)
+  }, [])
+
   /* 禮物清單一改,過期嘅庫存記錄無效,但保留返相關名稱避免重設 */
   useEffect(() => { /* 保持 stock 同 giftText 同步由用家自行處理 */ }, [giftText])
 
@@ -111,12 +119,13 @@ export default function App() {
         segments={segments}
         muted={muted}
         onLanded={onLanded}
+        onBusyChange={handleWheelBusy}
       />
 
       <div className="actions floating-actions">
         <button
           className="spin-btn"
-          disabled={spinning || noStockLeft}
+          disabled={spinning || wheelBusy || noStockLeft}
           onClick={spin}
         >
           {spinning ? '旋轉中…' : noStockLeft ? '禮物已全部送出' : '開 始 抽 獎'}

@@ -130,7 +130,14 @@ input[type='range'] { accent-color: var(--accent2); width: 100%; }
   width: min(94vw, 84vh);
   aspect-ratio: 1;
   z-index: 2;
+  /* 手勢拖轉:禁止觸控捲動 + 禁止選取文字 */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
 }
+.wheel-wrap.dragging { cursor: grabbing; }
+.wheel-svg { -webkit-user-drag: none; }
 
 .wheel-svg {
   width: 100%;
