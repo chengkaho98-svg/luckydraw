@@ -71,7 +71,7 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
 
   /* ---------- 渲染 ---------- */
   return (
-    <div className="wheel-stand">   {/* 支架容器:座檯腳 + 底盤 + 輪盤 */}
+    <div className="wheel-outer">
       <div className="wheel-wrap">
         <svg viewBox={`0 0 ${viewBox} ${viewBox}`} className="wheel-svg">
           <defs>
@@ -174,12 +174,6 @@ export default forwardRef(function LuckyWheel({ segments, muted, onLanded }, ref
         {winAt != null && (
           <div className="win-glow" key={winAt} />
         )}
-      </div>
-
-      {/* 支架:柱 + 底座(喺輪盤後面,純視覺) */}
-      <div className="stand-pole" aria-hidden />
-      <div className="stand-base" aria-hidden>
-        <span className="base-shine" aria-hidden />
       </div>
     </div>
   )

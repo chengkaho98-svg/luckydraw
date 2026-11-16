@@ -33,25 +33,25 @@ export default function SettingsPanel({
           <section>
             <h3>🎁 禮物與人數</h3>
             <label className="field">
-              <span>禮物清單（用逗號或換行分隔）</span>
+              <span>禮物清單（以逗號或換行分隔）</span>
               <textarea rows={4} value={giftText} onChange={(e) => setGiftText(e.target.value)} />
             </label>
             <div className="grid-2">
               <label className="field">
-                <span>👥 在場人數</span>
+                <span>👥 參與人數</span>
                 <input type="number" min={1} value={players} onChange={(e) => setPlayers(Math.max(1, +e.target.value || 1))} />
               </label>
               <label className="field">
-                <span>🎁 每人可中上限</span>
+                <span>🎁 每人中獎上限</span>
                 <input type="number" min={1} max={10} value={shares} onChange={(e) => setShares(Math.min(10, Math.max(1, +e.target.value || 1)))} />
               </label>
             </div>
           </section>
 
-          {/* 數量 — 抽少一份少一份,抽晒就自動離開輪盤 */}
+          {/* 數量 — 抽中即扣減,數量耗盡自動移出輪盤 */}
           <section>
-            <h3>📦 禮物數量 <small className="qty-note">(留空 = 無限)</small></h3>
-            {segments.length === 0 && <p className="hint">加返啲禮物先～</p>}
+            <h3>📦 禮物數量 <small className="qty-note">（留空即無限）</small></h3>
+            {segments.length === 0 && <p className="hint">請先添加禮物</p>}
             {segments.map((s) => (
               <div key={s.name} className="w-row qty-row">
                 <span className="w-name">{s.name}</span>
@@ -61,16 +61,16 @@ export default function SettingsPanel({
                   value={s.remaining === Infinity ? '' : s.remaining}
                   onChange={(e) => setStock((st) => ({ ...st, [s.name]: e.target.value === '' ? '' : Math.max(0, Math.floor(+e.target.value || 0)) }))}
                 />
-                <b className="w-pct qty-left">{s.remaining === Infinity ? '∞' : `剩 ${s.remaining}`}</b>
+                <b className="w-pct qty-left">{s.remaining === Infinity ? '∞' : `餘 ${s.remaining}`}</b>
               </div>
             ))}
-            <p className="hint">💡 抽中一次扣一份；抽晒嘅獎品會自動離開輪盤，剩低嘅按原本機率重新分配。</p>
+            <p className="hint">💡 每次抽中即扣減一份；數量耗盡的獎品將自動移出輪盤，其餘獎品依原機率重新分配。</p>
           </section>
 
-          {/* 機率（對外隱藏，只喺設定入面睇到） */}
+          {/* 機率（對外隱藏,僅於設定內顯示） */}
           <section>
             <h3>🎚 中獎機率</h3>
-            {segments.length === 0 && <p className="hint">加返啲禮物先～</p>}
+            {segments.length === 0 && <p className="hint">請先添加禮物</p>}
             {segments.map((s) => (
               <div key={s.name} className="w-row">
                 <span className="w-name">{s.name}</span>
@@ -87,9 +87,9 @@ export default function SettingsPanel({
 
           {/* 中獎紀錄 */}
           <section>
-            <h3>🏆 中獎紀錄</h3>
+            <h3>🏆 中獎記錄</h3>
             {history.length === 0
-              ? <p className="empty-hint">仲未有人中獎～</p>
+              ? <p className="empty-hint">尚無中獎記錄</p>
               : (
                 <ol className="history-list">
                   {history.slice(0, 15).map((h, i) => (
@@ -100,7 +100,7 @@ export default function SettingsPanel({
           </section>
         </div>
 
-        <p className="hint settings-note">💡 輪盤上每格均分顯示，實際抽中大細按上面機率計算</p>
+        <p className="hint settings-note">💡 輪盤各格均等顯示，實際中獎機率依上方設定計算</p>
       </div>
     </div>
   )

@@ -116,8 +116,8 @@ input[type='range'] { accent-color: var(--accent2); width: 100%; }
 /* ---------- wheel 舞台（全屏放大幅度） ---------- */
 .wheel-card { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 26px; }
 
-/* 支架容器:輪盤 + 柱 + 底座 */
-.wheel-stand {
+/* 輪盤容器(已移除支架) */
+.wheel-outer {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -126,47 +126,10 @@ input[type='range'] { accent-color: var(--accent2); width: 100%; }
 }
 .wheel-wrap {
   position: relative;
-  /* 佈滿畫面:扣走支架空間 */
-  width: min(88vw, 70vh);
+  /* 無支架後放大,佈滿畫面 */
+  width: min(94vw, 84vh);
   aspect-ratio: 1;
   z-index: 2;
-}
-/* 底座腳柱(喺輪盤後面)— 拉絲鋼藍金屬 */
-.stand-pole {
-  width: min(46px, 5vw);
-  height: min(150px, 16vh);
-  margin-top: -14px;
-  background: linear-gradient(90deg,
-    #12233f 0%, #2c4a76 22%, #5f9bd8 50%, #2c4a76 78%, #0f1d36 100%);
-  border-radius: 0 0 10px 10px;
-  box-shadow:
-    inset 0 0 12px rgba(0, 0, 0, 0.55),
-    0 14px 26px rgba(2, 10, 26, 0.55);
-  z-index: 1;
-}
-.stand-base {
-  width: min(340px, 38vw);
-  height: min(46px, 6vh);
-  margin-top: -4px;
-  border-radius: 50% 50% 46% 46% / 68% 68% 32% 32%;
-  background: linear-gradient(180deg,
-    #16304f 0%, #23507f 26%, #4f8ef7 55%, #142c4c 100%);
-  box-shadow:
-    inset 0 6px 10px rgba(150, 200, 255, 0.3),
-    inset 0 -14px 18px rgba(0, 0, 0, 0.5),
-    0 20px 34px rgba(2, 10, 26, 0.6);
-  position: relative;
-  z-index: 0;
-}
-.base-shine {
-  position: absolute;
-  left: 18%; top: 22%;
-  width: 64%; height: 30%;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center,
-    rgba(170, 210, 255, 0.5) 0%,
-    rgba(170, 210, 255, 0) 70%);
-  pointer-events: none;
 }
 
 .wheel-svg {
@@ -237,9 +200,9 @@ input[type='range'] { accent-color: var(--accent2); width: 100%; }
 .spin-btn {
   font: inherit;
   font-weight: 700;
-  font-size: 1.25rem;
+  font-size: 1.63rem;
   letter-spacing: 0.04em;
-  padding: 15px 42px;
+  padding: 19px 55px;
   border: 1px solid rgba(240, 199, 94, 0.55);
   border-radius: 12px;
   color: #f7f9ff;
@@ -273,6 +236,28 @@ input[type='range'] { accent-color: var(--accent2); width: 100%; }
 }
 .gear-btn:hover { transform: rotate(40deg) scale(1.06); color: var(--accent); box-shadow: 0 12px 30px rgba(79, 142, 247, 0.35); }
 .gear-btn:active { transform: rotate(80deg) scale(0.95); }
+
+/* ---------- 右下角全螢幕 ---------- */
+.fullscreen-btn {
+  position: fixed;
+  right: 96px;
+  bottom: 22px;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(140, 180, 255, 0.3);
+  background: linear-gradient(160deg, rgba(30, 62, 110, 0.75), rgba(14, 32, 62, 0.75));
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 26px rgba(2, 10, 26, 0.55);
+  transition: transform 0.25s, box-shadow 0.25s, color 0.2s;
+  z-index: 70;
+}
+.fullscreen-btn:hover { transform: scale(1.06); color: var(--accent); box-shadow: 0 12px 30px rgba(79, 142, 247, 0.35); }
+.fullscreen-btn:active { transform: scale(0.95); }
 
 /* ---------- 設定彈窗 ---------- */
 .settings-backdrop {
